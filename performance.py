@@ -20,8 +20,7 @@ colors = ['b', 'r','g','c','y','m', 'b', 'r','g','c','y','m','y','m', 'b']
 combs = list(itertools.product(markers, colors))
 
 fwrite = open('datasets/performance_models.csv', 'w')
-fwrite.write("ID Level_1 Level_2 Level_3 Level_4 \n")
-
+fwrite.write("ID Level_1 Level_2 Level_3 Level_4\n")
 
 dirname = 'clean_data'
 users = os.listdir(dirname)
@@ -58,9 +57,17 @@ for user in users:
 				um.append(-1.0)
 			else: 
 				um.append(scores.count(i)/float((scores.count(i) + scores.count(-1*i))))
-		name.append([user + '/' + session])
-		n.append([user])
+
 		user_models.append(um)
-	
 		fwrite.write(user + '/' + session + ' ' + str(um[0]) + ' ' + str(um[1]) + ' ' + str(um[2]) + ' ' + str(um[3]) + '\n')
+
+#print np.mean(user_models, axis=0), np.std(user_models, axis=0)
+#X = [1,2,3,4]
+#labels = ['Level 1', 'Level 2', 'Level 3', 'Level 4']
+#plt.bar(X, np.mean(user_models, axis=0))
+#plt.bar(X, np.mean(user_models, axis=0), yerr = np.std(user_models, axis=0), fmt='o--', color = 'b', ecolor='b')
+#plt.title("Mean Sucess Probability per Level")
+#plt.xticks(X, labels)
+#plt.xlim([0,5])
+#plt.show()
 

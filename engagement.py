@@ -47,7 +47,7 @@ def read_from_file(f):
 	
 	return np.asarray(a).mean(axis=1), np.asarray(b).mean(axis=1),np.asarray(g).mean(axis=1),np.asarray(d).mean(axis=1),np.asarray(t).mean(axis=1), c
 
-def ewma(Y, a = 0.05): 
+def ewma(Y, a = 0.1): 
 	S = []
 	for i, y in enumerate(Y): 
 		if i == 0: 
@@ -56,7 +56,7 @@ def ewma(Y, a = 0.05):
 			S.append(a*Y[i-1] + (1-a)*S[i-1])
 	return S	
 
-clusters = load_clusters('datasets/user_clusters.csv')
+#clusters = load_clusters('datasets/user_clusters.csv')
 
 if not os.path.exists('EEG_analysis/'):
 	os.makedirs('EEG_analysis/')
@@ -66,17 +66,22 @@ indices = [1,2,3,4,5]
 indices = [1]
 dirname = "clean_data"
 users = os.listdir(dirname)
+
 for index in indices: 
-	efile = open('datasets/index_' + str(index) + '.csv','w')
-	efile.write('ID cluster length robot_feedback previous_score current_result current_score engagement action\n')
-	f3 = open('datasets/normalized_index_' + str(index) + '.csv', 'w')
-	f3.write('ID cluster length robot_feedback previous_score current_result current_score engagement action\n')
+	DF1 = open('datasets/index_' + str(index) + '.csv','w')
+	DF1.write('ID length robot_feedback previous_score current_result current_score engagement action\n')
+	DF2 = open('datasets/normalized_' + str(index) + '.csv','w')
+	DF2.write('ID length robot_feedback previous_score current_result current_score engagement action\n')
+	AF1 = open('EEG_analysis/index_' + str(index), 'w')
+	
 	F = 1 
 	FULL = []
 	means = []
 	for user in users:
 		sessions = os.listdir(dirname + '/' + user)
 		for session in sessions:
+			#print user + '/' + session
+
 			EE = []
 			turn_mean = []
 			i = 0
@@ -84,8 +89,8 @@ for index in indices:
 			if not os.path.exists('EEG_analysis/' + user + '/' + session):
 				os.makedirs('EEG_analysis/' + user + '/' + session)
 
-			ff = open('EEG_analysis/' + user + '/' + session + '/index_' + str(index), 'w')
-			ff2 = open('EEG_analysis/' + user + '/' + session + '/normalized', 'w')
+			UF1 = open('EEG_analysis/' + user + '/' + session + '/index_' + str(index), 'w')
+			#ff2 = open('EEG_analysis/' + user + '/' + session + '/normalized', 'w')
 		
 			file_name = dirname + '/' + user + '/' + session
 			log1 = open(file_name + '/state_EEG', 'r')
@@ -120,12 +125,13 @@ for index in indices:
 					last = 0 
 				else:  
 					if last: 
-						efile.write(' -1\n')
-						#ff.write(' -1\n')
+						#DF1.write(' -1\n')
+						#AF1.write(' -1\n')
 						last = 0
 					else: 
-						efile.write(' ' + str(action) + '\n')
-						ff.write(' ' + str(action) + '\n')
+						DF1.write(' ' + str(action) + '\n')
+						AF1.write(' ' + str(action) + '\n')
+						UF1.write(' ' + str(action) + '\n')
 
 				f = open(file_name + '/' + eeg_filename, 'r')
 				a, b, g, d, t, c = read_from_file(f)
@@ -157,68 +163,80 @@ for index in indices:
 				turn_mean.append(np.asarray(engagement).mean())
 				means.append(np.asarray(engagement).mean())			
 
-				efile.write(user + '/' + session + ' ' + clusters[user + '/' + session]  + ' ' + str(length) + ' ' + str(rf) + ' ' + str(ps) + ' ' + str(result) + ' ' + str(score) + ' ' + str(np.asarray(engagement).mean()))
-				ff.write(user + '/' + session + ' ' + clusters[user + '/' + session]  + ' ' + str(length) + ' ' + str(rf) + ' ' + str(ps) + ' ' + str(result) + ' ' + str(score))
+				DF1.write(user + '/' + session + ' ' + str(length) + ' ' + str(rf) + ' ' + str(ps) + ' ' + str(result) + ' ' + str(score) + ' ' + str(np.asarray(engagement).mean()))
+				AF1.write(user + '/' + session + ' ' + str(length) + ' ' + str(rf) + ' ' + str(ps) + ' ' + str(result) + ' ' + str(score))
+				UF1.write(user + '/' + session + ' ' + str(length) + ' ' + str(rf) + ' ' + str(ps) + ' ' + str(result) + ' ' + str(score))
 			
 				for E in engagement: 
-					#efile.write(' ' + str(E))
-					ff.write(' ' + str(E))
+					AF1.write(' ' + str(E))
+					UF1.write(' ' + str(E))
 					FULL.append(E)
-					EE.append(E)
-				#plt.axvline(x=i-1, color = 'k')
-				#plt.hold(True)		
+					EE.append(E)	
 			
-			ff.write(' -1\n')
-			ff.close() 
+			DF1.write(' -1\n')
+			AF1.write(' -1\n')
+			UF1.write(' -1\n')
+			UF1.close()
 			
-		normed = normalize_by_range(EE)
-		plt.subplot(211)
-		plt.plot(EE)
-		plt.subplot(212)
-		plt.plot(normed)
-		plt.savefig('EEG_analysis/' + user + '/' + session + '/normed_' + str(index) + '.png')
-		plt.hold(False)
-		#print turn
-		#print len(normed)
-		#raw_input()
+			normed = normalize_by_range(EE)
+			plt.subplot(311)
+			plt.plot(EE)
+			plt.xlim([0,len(EE)])
+			plt.subplot(312)
+			plt.plot(normed)
+			plt.xlim([0,len(normed)])
+			plt.hold(False)
 		
-		aa = 1 
-		for ii, n in enumerate(normed):
-			if ii < len(normed) and aa < len(turn): 
-				#print ii, len(turn), aa
-				if ii == turn[aa]: 
-				#	print turn[aa]	
-					ff2.write('\n')
-					aa += 1
-			ff2.write(str(n) + ' ')
-		ff2.write('\n')
-		ff2.close()
-
-		# normalized index file
-		f1 = open('EEG_analysis/' + user + '/' + session + '/index_' + str(index), 'r')
-		f2 = open('EEG_analysis/' + user + '/' + session + '/normalized', 'r')
+			UF2 = open('EEG_analysis/' + user + '/' + session + '/normalized_' + str(index), 'w')		
 		
-		lines1 = f1.readlines()
-		lines2 = f2.readlines()
-		for a,b in zip(lines1, lines2):
-			aa = a.split()
-			bb = b.split()
-			eng = np.asarray(bb).astype(float).mean()
-			f3.write(str(aa[0])+ ' '+str(aa[1])+' '+str(aa[2])+' '+str(aa[3])+' '+str(aa[4])+' '+str(aa[5])+' '+str(aa[6])+' '+str(eng)+' '+str(aa[-1]) + '\n')
-		#f3.close()
+			normed_mean = []
+			tmp = []
+			aa = 1 
+			for ii, n in enumerate(normed):
+				if ii < len(normed) and aa < len(turn): 
+					if ii == turn[aa]: 
+						UF2.write('\n')
+						normed_mean.append(np.asarray(tmp).mean())
+						tmp = []
+						aa += 1
+				UF2.write(str(n) + ' ')
+				tmp.append(n)
+				
+			normed_mean.append(np.asarray(tmp).mean())
+			UF2.write('\n')
+			UF2.close()
 
-		plt.plot(range(1,26), turn_mean)
-		plt.title('Mean engagement per turn')
-		plt.xlabel('Turns')
-		plt.xlim([1,25])
-		plt.savefig('EEG_analysis/' + user + '/' + session + '/index_' + str(index) + '.png')
-		plt.hold(False)
-		plt.close()
+			# normalized index file
+			f1 = open('EEG_analysis/' + user + '/' + session + '/index_' + str(index), 'r')
+			f2 = open('EEG_analysis/' + user + '/' + session + '/normalized_' + str(index), 'r')
+		
+			lines1 = f1.readlines()
+			lines2 = f2.readlines()
+			f1.close()
+			f2.close()
 			
+			for a,b in zip(lines1, lines2):
+				aa = a.split()
+				bb = b.split()
+				eng = np.asarray(bb).astype(float).mean()
+				DF2.write(str(aa[0])+ ' '+str(aa[1])+' '+str(aa[2])+' '+str(aa[3])+' '+str(aa[4])+' '+str(aa[5])+' '+str(eng)+' '+str(aa[-1]) + '\n')
+		
+			plt.subplot(313)
+			plt.plot(range(1,26), normed_mean)
+			#plt.title('Mean engagement per turn')
+			plt.xlabel('Turns')
+			plt.xlim([1,25])
+			plt.savefig('EEG_analysis/' + user + '/' + session + '/index_' + str(index) + '.png')
+			plt.hold(False)
+			plt.close()
+			
+			#print normed_mean
+			#raw_input()
 
-	weights = np.ones_like(means)/float(len(means))
-	plt.hist(means, bins = 10, weights = weights)
-	plt.title('engagement means - index ' + str(index))
-	plt.savefig('EEG_analysis/index_' + str(index) + '.png')
+	#weights = np.ones_like(means)/float(len(means))
+	#plt.hist(means, bins = 10, weights = weights)
+	#plt.title('engagement means - index ' + str(index))
+	#plt.savefig('EEG_analysis/index_' + str(index) + '.png')
+		
 
 
