@@ -196,8 +196,8 @@ if q:
 table.Q = Q
 
 egreedy = Policy('softmax',To)
-alpha = float(0.1)
-gamma = float(0.95)
+alpha = float(0.15)
+gamma = float(0.8)
 learning = Learning('sarsa', [alpha, gamma])
 
 R = []
@@ -272,16 +272,16 @@ while (episode < episodes):
 		#reward = 0.6*result + 0.4*engagement
 		###
 		
-		EE.append(engagement)
+		EE.append(engagement[0])
 
 		#if interactive_type: 			
 		#	reward += 0.5*(1.0 - engagement) 
 	
 		r += (learning.gamma**(iteration-1))*reward
-		score += result
+		score += reward
 
 		if episode % epochs == 0 or episode == 1:
-			g.write(str(iteration) + '... ' + str(state) + ' ' + str(A[action]) + ' ' + str(next_state) + ' ' + str(reward)  + ' ' + str(score)  + ' ' +  str(engagement) + '\n')
+			g.write(str(iteration) + '... ' + str(state) + ' ' + str(A[action]) + ' ' + str(next_state) + ' ' + str(reward)  + ' ' + str(score)  + ' ' +  str(engagement[0]) + '\n')
 
 		if iteration == N:
 			done = 1
@@ -290,7 +290,7 @@ while (episode < episodes):
 
 		# reward shaping -- before update
 		if interactive_type:
-			reward += 0.5*engagement 
+			reward = 1.5*engagement 
 			
 		## LEARNING 
 		#print state_index, action, reward
@@ -304,7 +304,7 @@ while (episode < episodes):
 
 		state = next_state
 		previous_result = result
-		ERROR.append(abs(error))
+		ERROR.append(error)
 		
 		#v_avg = np.asarray(Q).max(axis=1).mean()
 		#v_avg = max(Q[start_state_index][:])
@@ -329,11 +329,9 @@ while (episode < episodes):
 	ENG.append(np.asarray(EE).mean())
 
 print visits
-	
 with open('results/' + name + '/q_table', 'w') as f:
 	writer = csv.writer(f,delimiter=' ')
 	writer.writerows(Q)
-
 
 tmp = []
 return_epoch = []

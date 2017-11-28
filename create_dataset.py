@@ -15,7 +15,7 @@ def load_clusters(filename):
 	return Clusters	
 
 clusters = load_clusters('datasets/user_models_both.csv')
-for index in [1,2,3,4,5]: 
+for index in [1]: 
 	DF1 = open('datasets/normalized_' + str(index) + '.csv','r')
 	DF2 = open('datasets/final_' + str(index) + '.csv','w')
 	DF2.write('ID cluster length robot_feedback previous_score current_result current_score engagement action\n')

@@ -11,6 +11,10 @@ def normalize_by_range(x, nmin = 0, nmax = 1):
 	x = np.asarray(x)
 	return (nmax-nmin)*(x-min(x))/(max(x)-min(x)) + nmin
 
+def normalize_by_mean(x): 
+	x = np.asarray(x)
+	return x-x.mean()
+
 def statistics(x):
 	x = np.asarray(x)
 	return min(x), max(x), x.mean()
@@ -178,7 +182,8 @@ for index in indices:
 			UF1.write(' -1\n')
 			UF1.close()
 			
-			normed = normalize_by_range(EE)
+			scaled = normalize_by_mean(EE)
+			normed = normalize_by_range(scaled)
 			plt.subplot(311)
 			plt.plot(EE)
 			plt.xlim([0,len(EE)])
