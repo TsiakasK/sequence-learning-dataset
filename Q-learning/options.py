@@ -10,7 +10,7 @@ def GetOptions(argv):
 	epochs = 100 
 	user = 1 
 	Table = 0
-	exploration = 1
+	exploration = 100
 	OKGREEN = '\033[92m'
 	ENDC = '\033[0m'
 
