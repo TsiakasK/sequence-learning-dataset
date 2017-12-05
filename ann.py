@@ -9,8 +9,8 @@ from six.moves import cPickle
 def build_pmodel(): 
 
 	model = Sequential()
-	model.add(Dense(10, input_dim = 5, activation='tanh'))
-	model.add(Dense(5, activation='tanh'))
+	model.add(Dense(20, input_dim = 5, activation='linear'))
+	model.add(Dense(10, activation='tanh'))
 	model.add(Dense(1, activation='sigmoid'))
 	rms = RMSprop()
 	model.compile(loss='mse', optimizer='sgd')
@@ -19,8 +19,8 @@ def build_pmodel():
 def build_fmodel(): 
 
 	model = Sequential()
-	model.add(Dense(10, input_dim = 6, activation='tanh'))
-	model.add(Dense(5, activation='tanh'))
+	model.add(Dense(20, input_dim = 6, activation='tanh'))
+	model.add(Dense(10, activation='tanh'))
 	model.add(Dense(1, activation='tanh'))
 	rms = RMSprop()
 	model.compile(loss='mse', optimizer='sgd')

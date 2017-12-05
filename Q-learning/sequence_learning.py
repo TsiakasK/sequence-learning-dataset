@@ -196,7 +196,7 @@ if q:
 table.Q = Q
 
 egreedy = Policy('softmax',To)
-alpha = float(0.15)
+alpha = float(0.01)
 gamma = float(0.8)
 learning = Learning('sarsa', [alpha, gamma])
 
@@ -258,19 +258,8 @@ while (episode < episodes):
 		egreedy.Q_next_state = Q[next_state_index][:]
 		next_action = egreedy.return_action()
 		
-		#print state, action, next_state, reward
-		
 		engagement = 0
-		#if next_state[1] > 0: 
-		#	reward -= 4
-		#reward = get_engagement(normed_states[next_state_index], cmodel)[0][0]
-		#if int(user) > 0: 
-		
 		engagement = get_engagement(normed_states[next_state_index], result, cmodel)
-		#print engagement
-		###
-		#reward = 0.6*result + 0.4*engagement
-		###
 		
 		EE.append(engagement[0])
 
@@ -288,16 +277,14 @@ while (episode < episodes):
 
 		iteration += 1
 
-		# reward shaping -- before update
+		# reward is engagement
 		if interactive_type:
-			reward = 1.5*engagement 
+			reward = engagement 
 			
 		## LEARNING 
-		#print state_index, action, reward
 		if learn: 
 			Q[state_index][:], error = learning.update(state_index, action, next_state_index, next_action, reward, Q[state_index][:], Q[next_state_index][:], done)
-			#print Q[state_index][:]
-			#raw_input()
+			
 		# Q-augmentation -- after update
 		#if interactive_type:
 		#	Q[state_index][action] = 0.2*engagement
@@ -306,16 +293,6 @@ while (episode < episodes):
 		previous_result = result
 		ERROR.append(error)
 		
-		#v_avg = np.asarray(Q).max(axis=1).mean()
-		#v_avg = max(Q[start_state_index][:])
-		
-	#if egreedy.param < 5: 
-	#	egreedy.param = To - (10*To*float(episode))/(8*float(episodes)) 
-	
-	#if egreedy.param < 0: 
-	#	egreedy.param = 0 
-	#	print "no exploration at episode " + str(episode)  
-
 	episode += 1
 	R.append(r)
 	V.append(max(Q[start_state_index][:]))
@@ -343,7 +320,6 @@ for i, t in enumerate(R):
 		tmp = []
 
 plt.plot(return_epoch)
-#plt.plot(moving_average(R))
 plt.savefig('results/' + name + '/return.png')
 plt.close()
 
@@ -406,3 +382,4 @@ for s in states:
 	state_index = states.index(tuple(s))
 	argmaxQ = np.argmax(Q[state_index][:])
 	pf.write(str(state_index) + ' ' + str(s) + ' ' + str(argmaxQ) + '\n')
+

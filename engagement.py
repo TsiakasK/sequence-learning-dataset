@@ -182,8 +182,8 @@ for index in indices:
 			UF1.write(' -1\n')
 			UF1.close()
 			
-			scaled = normalize_by_mean(EE)
-			normed = normalize_by_range(scaled)
+			#scaled = normalize_by_mean(EE)
+			normed = normalize_by_range(EE)
 			plt.subplot(311)
 			plt.plot(EE)
 			plt.xlim([0,len(EE)])

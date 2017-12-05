@@ -13,7 +13,7 @@ import random
 import itertools
 import pandas as pd
 from sklearn.cluster import DBSCAN
-seed = np.random.RandomState(seed=80)
+seed = np.random.RandomState(seed=100)
 
 markers = ['o', 'v', 'h', 'H', 'o', 'v', 'h', 'H', 'h', 'H', 'o', 'v', 'h']
 colors = ['b', 'r','g','c','y','m', 'b', 'r','g','c','y','m','y','m', 'b']
