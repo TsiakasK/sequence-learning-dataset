@@ -10,16 +10,17 @@ def GetOptions(argv):
 	epochs = 100 
 	user = 1 
 	Table = 0
-	exploration = 100
+	exploration = 300
+	lr = 0.05
 	OKGREEN = '\033[92m'
 	ENDC = '\033[0m'
 
 	try:
-		opts, args = getopt.getopt(argv,"he:q:p:l:u:n:i:t:")
+		opts, args = getopt.getopt(argv,"he:q:p:l:u:n:i:t:a:")
 		#print opts, args
 	except getopt.GetoptError:
 		print '\n' + OKGREEN + 'USAGE:\n'
-		print './sequence_learning.py -e episodes -p epochs -q qtable -u user -n name -l learning -i interactive_type -t exploration ' + ENDC + '\n'
+		print './sequence_learning.py -e episodes -p epochs -q qtable -u user -n name -l learning -i interactive_type -t exploration -a learning_rate' + ENDC + '\n'
 		sys.exit(2)
 	for opt, arg in opts:
 		#print opt, arg
@@ -50,11 +51,13 @@ def GetOptions(argv):
 		 	interactive_type = int(arg)
 		elif opt in ("-l", "--learning"):
 		 	learning = int(arg)
+		elif opt in ("-a", "--alpha"):
+		 	lr = float(arg)
 
 	if len(argv[1::]) == 0 :
 		print '\n' + OKGREEN + 'Running with default parameters...' + ENDC + '\n'
 
-	return episodes, epochs, user, Table, name, learning, interactive_type, exploration
+	return episodes, epochs, user, Table, name, learning, interactive_type, exploration, lr
 
 
 #e, p, u, t, n, l, i = GetOptions(sys.argv[1::])

@@ -138,7 +138,7 @@ def moving_average(a, n=200) :
     ret[n:] = ret[n:] - ret[:-n]
     return ret[n - 1:] / n
 
-episodes, epochs, user, q, name, learn, interactive_type, To = GetOptions(sys.argv[1::])
+episodes, epochs, user, q, name, learn, interactive_type, To, alpha = GetOptions(sys.argv[1::])
 
 if not os.path.exists('results/' + str(name)):
 	os.makedirs('results/' + str(name))
@@ -156,6 +156,7 @@ logfile.write('Epochs: ' + str(epochs) + '\n')
 logfile.write('User: ' + str(user) + '\n')
 logfile.write('Qtable: ' + str(q) + '\n')
 logfile.write('Learning: ' + str(learn) + '\n')
+logfile.write('Learning Rate: ' + str(alpha) + '\n')
 logfile.write('Interactive: ' + str(interactive_type) + '\n\n')
 logfile.write('Exploration: ' + str(To) + '\n')
 logfile.close()
@@ -177,14 +178,12 @@ states, normed_states, actions, actions_oh = state_action_space()
 A = ['L = 3', 'L = 5', 'L = 7', 'L = 9' , 'PF', 'NF']
 
 first_length = random.choice([3,5,7,9])
-#start_state = (first_length,0,0)
 start_state = (0,0,0)
 start_state_index = states.index(tuple(start_state))
 
 # define MDP and policy
 m = MDP(start_state, actions)
 m.states = states
-#m.reward = [row[2] for row in m.states]
  
 table = Representation('qtable', [m.actlist, m.states])
 Q = np.asarray(table.Q)
@@ -196,8 +195,8 @@ if q:
 table.Q = Q
 
 egreedy = Policy('softmax',To)
-alpha = float(0.01)
-gamma = float(0.8)
+#alpha = float(0.01)
+gamma = float(0.95)
 learning = Learning('sarsa', [alpha, gamma])
 
 R = []
@@ -210,8 +209,6 @@ visits = np.ones((len(states)+1))
 episode = 1
 first_reward = 1
 while (episode < episodes): 
-	#start_state = (first_length,0,0)
-	#start_state_index = states.index(tuple(start_state))
 	state_index = start_state_index
 	state = start_state
 	score = 0
@@ -378,8 +375,16 @@ plt.close()
 
 
 pf = open('results/' + name + '/policy','w')
-for s in states: 
+for s, q in zip(states, Q): 
 	state_index = states.index(tuple(s))
-	argmaxQ = np.argmax(Q[state_index][:])
-	pf.write(str(state_index) + ' ' + str(s) + ' ' + str(argmaxQ) + '\n')
+	#argmaxQ = np.argmax(Q[state_index][:])
+	#pf.write(str(state_index) + ' ' + str(s) + ' ' + str(argmaxQ) + '\n')
+	pf.write(str(state_index) + ' ' + str(s))
+	print q
+	for i in q:
+		softm = ( np.exp(i / egreedy.param) / np.sum(np.exp(q/egreedy.param) ) )
+		pf.write(' ' + str(softm))
+	pf.write('\n')
+pf.close()
+
 

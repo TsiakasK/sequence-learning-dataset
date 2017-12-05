@@ -1,10 +1,11 @@
-logfile for: u0_a005 - 2017-12-04 10:48:01.164633
+logfile for: u0_a005 - 2017-12-05 12:34:12.712541
 
-Episodes: 30000
+Episodes: 25000
 Epochs: 100.0
 User: 0
 Qtable: 0
 Learning: 1
+Learning Rate: 0.05
 Interactive: 0
 
-Exploration: 350.0
+Exploration: 300
