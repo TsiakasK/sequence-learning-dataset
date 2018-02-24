@@ -1,5 +1,5 @@
 #!/usr/bin/python
-#from naoqi import ALProxy
+from naoqi import ALProxy
 import numpy as np 
 import readchar
 import time
@@ -9,6 +9,7 @@ import muse_pyliblo_server as mps
 import matplotlib.pyplot as plt
 import gc
 import random 
+from math import isnan
 from random import randint
 import webbrowser
 from RL import MDP
@@ -22,6 +23,7 @@ from options import GetOptions
 from keras.models import load_model
 from scipy.spatial.distance import euclidean
 import itertools
+import csv
 
 # initialize random seed
 random.seed(time.time())
@@ -72,18 +74,30 @@ def estimate_engagement(filehandler):
 	for line in lines:	
 		w = line.split()
 		if w[0] == 'a': 
-			a.append(float(w[1]))
+			if isnan(float(w[1])):
+				a.append(0.01)
+			else: 
+				a.append(float(w[1]))
 		elif w[0] == 'b': 
-			b.append(float(w[1]))
+			if isnan(float(w[1])):
+				b.append(0.01)
+			else: 
+				b.append(float(w[1]))
 		elif w[0] == 't': 
-			t.append(float(w[1]))
+			if isnan(float(w[1])):
+				t.append(0.01)
+			else: 
+				t.append(float(w[1]))
 
-	a_smoothed = ewma(a)
-	b_smoothed = ewma(b)
-	t_smoothed = ewma(t)
-	e = [x+y for x, y in zip(a_smoothed, t_smoothed)]
-	engagement = [x/y for x, y in zip(b_smoothed, e)]
-	return engagement
+	#if np.isnan(a) or np.isnan(b) or np.isnan(t): 
+	#	return [0]
+	else: 
+		a_smoothed = ewma(a)
+		b_smoothed = ewma(b)
+		t_smoothed = ewma(t)
+		e = [x+y for x, y in zip(a_smoothed, t_smoothed)]
+		engagement = [x/y for x, y in zip(b_smoothed, e)]
+		return engagement
 	
 def get_next_state(state, action, previous):
 	levels = {3:1, 5:2, 7:3, 9:4}
@@ -178,7 +192,6 @@ def assessment(server,folder):
 
 		diff_level = "Level" + str(level)
 		tts.say(diff_level)
-		tts.runAndWait()
 		time.sleep(0.5)
 
 		#announce sequence
@@ -186,7 +199,6 @@ def assessment(server,folder):
 		for item in seq:
 			time.sleep(0.8)
 			tts.say(item)
-			tts.runAndWait()
 		aup.playSine(1000, 100, 0, 1)
 		time.sleep(1)
 
@@ -228,9 +240,9 @@ def assessment(server,folder):
 	# normalize EEG values - engagement 
 	m1, m2 = 0, 0
 	for e in engagement: 
-		if m1 < min(e): 
+		if m1 > min(e): 
 			m1 = min(e)
-		if m2 > max(e):
+		if m2 < max(e):
 			m2 = max(e)
 	
 	normed = []
@@ -267,7 +279,7 @@ def assessment(server,folder):
 	
 	print DIST, DIST.index(min(DIST))
 
-	raw_input("Agree with cluster?")
+	#raw_input("Agree with cluster?")
 	
 	return DIST.index(min(DIST)), m1, m2
 
@@ -275,6 +287,7 @@ def assessment(server,folder):
 def training(server,cond, folder, um, m1, m2): 
 	D = [3,5,7,9]
 	L = ('a','b','c')
+	A = ['L1', 'L2', 'L3', 'L4', 'RF1', 'RF2']
 
 	positive_success = ["That was great! Keep up the good work!", "Wow, you do really great! Go on!", "That's awesome! You got it! Keep going!", "Fantastic! You do great! Keep going!"]
 	positive_failure = ["Oh, that was wrong! But that's fine! Don't give up!", "Oh, you missed it! No problem! Go on!", "Oops, that was not correct! That's OK! Keep going!", "Oops, too close! Stay focused and you will do it!"]
@@ -293,9 +306,9 @@ def training(server,cond, folder, um, m1, m2):
 	# define MDP, learning and q_table
 	m = MDP(start_state, actions)
 	m.states = states
-	To = 1.0
-	gamma = 0.5
-	alpha = 0.5	 
+	To = 4
+	gamma = 0.95
+	alpha = 0.6	 
 	table = Representation('qtable', [m.actlist, m.states])
 	Q = np.asarray(table.Q)
 	ins = open(q,'r')
@@ -309,7 +322,14 @@ def training(server,cond, folder, um, m1, m2):
 	t = 1
 	turns = 20
 	state = start_state
+	done = 0
+	logfile = open(folder + "/logfile", 'w')
 	while t<turns:
+
+		egreedy.param *= 0.65
+		if egreedy.param <= 1: 
+			egreedy.param = 1
+
 		# record EEG signals when robot announces the sequence 
 		out = open(folder + "/training_l_" + str(t), 'w')
 		server.f = out
@@ -374,7 +394,7 @@ def training(server,cond, folder, um, m1, m2):
 		server.f = out
 
 		# get engagement
-		eegfile = open(folder + "/assessment_" + str(t), 'r')
+		eegfile = open(folder + "/training_l_" + str(t), 'r')
 		eng = estimate_engagement(eegfile)
 
 		# normalize EEG engagement 
@@ -406,10 +426,10 @@ def training(server,cond, folder, um, m1, m2):
 		if seq != res:
 			success = -1
 			score = success
-			result = -1*length
+			result = -1*(D.index(length) + 1)
 		else: 
 			success = 1
-			score = length
+			score = D.index(length) + 1
 			result = score
 	
 		## record EEG signals when user presses the buttons ##
@@ -418,17 +438,30 @@ def training(server,cond, folder, um, m1, m2):
 		######################################################
 		
 		reward = result if result >= 0 else -1.0
-		reward += beta*feedback
+		reward += 4.5*feedback
 
-		if condition == 2:
-			next_state = (length, rf, int(previous_result)) 
-			state_index = states.index(tuple(start_state))
-			Q[state_index][:], error = learning.update(state_index, action, next_state_index, 0, reward, Q[state_index][:], Q[next_state_index][:], done)
 		
+		next_state = (length, rf, int(previous_result)) 
+		next_state_index = states.index(tuple(next_state))
+		
+		if t == turns: 
+			done = 1
+
+		egreedy.Q_state = Q[next_state_index][:]
+		next_action = egreedy.return_action()
+		
+		if condition == 2:
+			Q[state_index][:], error = learning.update(state_index, action, next_state_index, next_action, reward, Q[state_index][:], Q[next_state_index][:], done)
+		
+		logfile.write(str(t) + '... ' + str(state) + ' ' + str(A[action]) + ' ' + str(next_state) + ' ' + str(reward)  + ' ' + str(score)  + ' ' +  str(engagement) + '\n')
+
 		previous_result = result
-		previous_state = state 
-		previous_state_index = state_index	
+	        state = next_state
+		previous_success = success
+
 		t += 1
+
+	return Q
 	
 # user info and folders
 user = raw_input('Enter userID: ')
@@ -451,4 +484,9 @@ tts.say('Great! Lets start!')
 time.sleep(0.5)
 
 um, m1, m2 = assessment(server, user_folder)
-TR = training(server, condition, user_folder, um, m1, m2)
+print um, m1, m2
+
+Q = training(server, condition, user_folder, um, m1, m2)
+with open(user_folder + '/q_table', 'w') as f:
+	writer = csv.writer(f,delimiter=' ')
+	writer.writerows(Q)
